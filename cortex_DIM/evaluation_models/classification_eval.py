@@ -44,7 +44,6 @@ class ClassificationEval(ModelPlugin):
             raise ValueError('classifier_idx must be provided in config')
         else:
             self.task_idx = config['classifier_idx']
-
         n_labels = self.get_dims('data.targets')
         X = self.inputs('data.images')
         with torch.no_grad():
@@ -64,6 +63,7 @@ class ClassificationEval(ModelPlugin):
             layers = copy.deepcopy(layers)
             classifier.build(input_shape, n_labels, layers=layers)
         self.task_idx = classifier_task_idx_
+        print("Class Eval", self.task_idx)
 
     def routine(self, outs=None, semi_supervised_task_idx=[]):
         '''Classification routine.

@@ -36,10 +36,10 @@ class Classifier(ModelPlugin):
         Args:
             criterion: Classifier criterion.
             top_K (int or None): Evaluate top-K accuracy.
-
+            inputs: [64, 256, 4, 4], [64, 1024], [64, 64]
         '''
         classifier = self.nets.classifier
-
+        # outputs: [64, 10]
         outputs = classifier(inputs)
         unlabeled = targets.eq(-1).long()
         losses = criterion(outputs, (1 - unlabeled) * targets)

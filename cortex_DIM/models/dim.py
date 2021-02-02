@@ -11,6 +11,8 @@ from cortex_DIM.functions.dim_losses import donsker_varadhan_loss, infonce_loss,
 from cortex_DIM.nn_modules.convnet import Convnet
 from cortex_DIM.nn_modules.resnet import ResNet
 from cortex_DIM.nn_modules.mi_networks import MI1x1ConvNet, NopNet
+import logging
+logger = logging.getLogger('cortex_DIM')
 
 
 def sample_locations(enc, n_samples):
@@ -171,7 +173,7 @@ class GlobalDIM(ModelPlugin):
             act_penalty: L2 penalty on the global activations.
 
         '''
-        L, G = outs[self.name]
+        # L, G = outs[self.name]
 
         act_loss = (G ** 2).sum(1).mean()
 
@@ -216,6 +218,7 @@ class LocalDIM(ModelPlugin):
         # Create MI nn_modules.
         X = self.inputs('data.images')
         outs = self.nets.encoder(X, return_all_activations=True)
+        # L: [64, 128, 8, 8], G: [64, 64], X: [64, 3, 32, 32]
         L, G = [outs[i] for i in self.task_idx]
         local_size = L.size()[1:]
         global_size = G.size()[1:]
@@ -254,16 +257,23 @@ class LocalDIM(ModelPlugin):
 
             '''
             l_idx, g_idx = self.task_idx
+            # [64, 128, 8 ,8]
             L = outs[l_idx]
+            # [64, 64]
             G = outs[g_idx]
+            # print("Before Extract", len(outs), l_idx, g_idx, L.size(), G.size())
 
             # All globals are reshaped as 1x1 feature maps.
             global_size = G.size()[1:]
             if len(global_size) == 1:
                 G = G[:, :, None, None]
 
+            # [64, 2048, 8, 8]
             L = local_net(L)
+            # [64, 2048, 1, 1]
             G = global_net(G)
+
+            # print("After Extract", L.size(), G.size())
 
             N, local_units = L.size()[:2]
             L = L.view(N, local_units, -1)
@@ -276,6 +286,8 @@ class LocalDIM(ModelPlugin):
             if local_samples is not None:
                 L = sample_locations(L, local_samples)
 
+            # add hash function for G only
+            G = torch.tanh(G)
             return L, G
 
         self.nets.encoder.module.add_network(self.name, extract,
@@ -291,7 +303,11 @@ class LocalDIM(ModelPlugin):
             act_penalty: L2 penalty on the global activations. Can improve stability.
 
         '''
+
+        # [64, 2048, 64], [64, 2048, 1]
         L, G = outs[self.name]
+
+        # print("Routine {} {}".format(L.size(), G.size()))
 
         if act_penalty > 0.:
             act_loss = act_penalty * (G ** 2).sum(1).mean()

@@ -1,6 +1,7 @@
 '''Deep Implicit Infomax
 
 '''
+# To see if this changes
 
 import argparse
 from argparse import RawTextHelpFormatter
@@ -60,7 +61,7 @@ if __name__ == '__main__':
     models = args.models
     models = list(set(models))
     models = dict((k, mode_dict[k]) for k in models)
-
     sys.argv = [sys.argv[0]] + sys.argv[i:]
     controller = Controller(inputs=dict(inputs='data.images'), **models)
+
     run(controller)

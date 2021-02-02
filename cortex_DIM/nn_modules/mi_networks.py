@@ -113,7 +113,8 @@ class MI1x1ConvNet(nn.Module):
                 torch.Tensor: network output.
 
         """
-
+        # x: [64, 128, 8, 8], [64, 2048, 8, 8]
+        # x: [64, 64, 1, 1], [64, 2048, 1, 1]
         h = self.block_ln(self.block_nonlinear(x) + self.linear_shortcut(x))
         return h
 

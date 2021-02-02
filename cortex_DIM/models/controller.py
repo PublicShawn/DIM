@@ -88,6 +88,8 @@ class BigEncoder(torch.nn.Module):
         '''
         outs = self.encoder(X, return_full_list=return_all_activations)
         layer_outs = {}
+        # for i in outs:
+        #     print("!!!!!!!!!!!!!!!!", i.size())
 
         if return_all_activations:
             if return_rkhs:
@@ -96,7 +98,7 @@ class BigEncoder(torch.nn.Module):
                     network_keys = self.network_keys[key]
                     networks = dict((k, getattr(self, '{}_{}'.format(key, k))) for k in network_keys)
                     layer_outs[key] = extract_fn(outs, **networks)
-
+                    # print("RETURN", layer_outs[key][0].size(), layer_outs[key][1].size())
                 return outs, layer_outs
             else:
                 return outs
@@ -122,7 +124,6 @@ class Controller(ModelPlugin):
             inputs (dict): Mapping for data names.
             **model_classes: name, class keyword pairs of models.
         '''
-
         super().__init__(inputs=inputs)
         for k, model_cls in model_classes.items():
             setattr(self, k, model_cls(inputs=inputs))
@@ -183,6 +184,7 @@ class Controller(ModelPlugin):
                 top_layer = dict(layer='linear', args=(output_units,))
                 encoder_args['layers'].append(top_layer)
             encoder = BigEncoder(Encoder(input_shape, **encoder_args))
+            print("encoder_args!!!!!!!!!!!!!!!!", Encoder, encoder_args)
             self.add_nets(encoder=encoder)  # Adds the encoder to the list of networks.
 
         # Build the self-supervision and monitoring models.
@@ -199,6 +201,7 @@ class Controller(ModelPlugin):
         '''
 
         # Draw data
+
         self.data.next()
         X = self.inputs('data.images')
 
@@ -208,6 +211,7 @@ class Controller(ModelPlugin):
                 outs, layer_outs = self.nets.encoder(X, return_all_activations=True, return_rkhs=True)
         else:
             outs, layer_outs = self.nets.encoder(X, return_all_activations=True, return_rkhs=True)
+
 
         # Pass data to model routines. This collects all the losses and results from modules.
         for name in self.model_names:
